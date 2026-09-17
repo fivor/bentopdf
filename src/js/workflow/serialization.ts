@@ -10,6 +10,7 @@ import type {
   SerializedConnection,
 } from './types';
 import { WORKFLOW_VERSION } from './types';
+import { wfError } from './errors';
 
 type AreaExtra = LitArea2D<ClassicScheme>;
 
@@ -68,9 +69,7 @@ async function deserializeWorkflow(
   area: AreaPlugin<ClassicScheme, AreaExtra>
 ): Promise<void> {
   if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.connections)) {
-    throw new Error(
-      'Invalid workflow file: missing nodes or connections array.'
-    );
+    throw new Error(wfError('invalidWorkflowFile'));
   }
 
   if (data.version !== WORKFLOW_VERSION) {
@@ -99,7 +98,10 @@ async function deserializeWorkflow(
     for (const [key, value] of Object.entries(serializedNode.controls || {})) {
       const control = node.controls[key];
       if (control && 'value' in control) {
-        (control as { value: unknown }).value = value;
+        (control as { value: unknown }).value = node.sanitizeControlValue(
+          key,
+          value
+        );
       }
     }
 
@@ -169,10 +171,7 @@ export function saveWorkflow(
     } else {
       delete templates[name];
     }
-    throw new Error(
-      'Failed to save workflow: storage quota exceeded. Try deleting old templates.',
-      { cause: e }
-    );
+    throw new Error(wfError('storageQuotaExceeded'), { cause: e });
   }
 }
 
@@ -245,7 +244,7 @@ export async function importWorkflow(
         resolve();
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        reject(new Error(`Failed to import workflow: ${message}`));
+        reject(new Error(wfError('failedToImport', { message })));
       }
     };
 

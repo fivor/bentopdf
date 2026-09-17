@@ -1,5 +1,5 @@
 import PostalMime from 'postal-mime';
-import MsgReader from '@kenjiuno/msgreader';
+import MsgReaderDefault from '@kenjiuno/msgreader';
 import {
   formatBytes,
   escapeHtml,
@@ -8,6 +8,11 @@ import {
   formatRawDate,
 } from '../utils/helpers.js';
 import type { EmailAttachment, ParsedEmail, EmailRenderOptions } from '@/types';
+
+type MsgReaderCtor = typeof MsgReaderDefault;
+const MsgReader: MsgReaderCtor =
+  (MsgReaderDefault as unknown as { default?: MsgReaderCtor }).default ??
+  MsgReaderDefault;
 
 export type { EmailAttachment, ParsedEmail, EmailRenderOptions };
 
@@ -212,7 +217,13 @@ function processInlineImages(
     const att = cidMap.get(cid);
     if (att && att.content) {
       const base64 = uint8ArrayToBase64(att.content);
-      return `src="data:${att.contentType};base64,${base64}"`;
+      const safeType =
+        /^[a-zA-Z0-9][a-zA-Z0-9!#$&^_.+-]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&^_.+-]*$/.test(
+          att.contentType
+        )
+          ? att.contentType
+          : 'application/octet-stream';
+      return `src="data:${safeType};base64,${base64}"`;
     }
     return match;
   });

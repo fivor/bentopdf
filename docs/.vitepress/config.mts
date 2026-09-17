@@ -1,9 +1,20 @@
 import { defineConfig } from 'vitepress'
 
+const SITE_URL = 'https://www.bentopdf.com'
+
 export default defineConfig({
     title: "BentoPDF Docs",
     description: "Documentation for BentoPDF - The free, open-source, privacy-first PDF toolkit",
     base: '/docs/',
+    cleanUrls: true,
+
+    transformPageData(pageData) {
+        const relPath = pageData.relativePath.replace(/\.md$/, '')
+        const slug = relPath === 'index' ? '' : relPath.replace(/\/index$/, '/')
+        const canonicalUrl = slug ? `${SITE_URL}/docs/${slug}` : `${SITE_URL}/docs/`
+        pageData.frontmatter.head ??= []
+        pageData.frontmatter.head.push(['link', { rel: 'canonical', href: canonicalUrl }])
+    },
 
     themeConfig: {
         logo: '/images/favicon-no-bg.svg',
@@ -104,7 +115,7 @@ export default defineConfig({
                         { text: 'PDF to Excel', link: '/tools/pdf-to-excel' },
                         { text: 'PDF to Greyscale', link: '/tools/pdf-to-greyscale' },
                         { text: 'PDF to JSON', link: '/tools/pdf-to-json' },
-                        { text: 'PDF to Word', link: '/tools/pdf-to-docx' },
+                        { text: 'PDF to Word', link: '/tools/pdf-to-word' },
                         { text: 'Extract Images', link: '/tools/extract-images' },
                         { text: 'PDF to Markdown', link: '/tools/pdf-to-markdown' },
                         { text: 'Prepare PDF for AI', link: '/tools/prepare-pdf-for-ai' },
@@ -121,6 +132,7 @@ export default defineConfig({
                         { text: 'OCR PDF', link: '/tools/ocr-pdf' },
                         { text: 'Merge PDF', link: '/tools/merge-pdf' },
                         { text: 'Alternate & Mix Pages', link: '/tools/alternate-merge' },
+                        { text: 'Duplex Collate', link: '/tools/duplex-collate' },
                         { text: 'Organize & Duplicate', link: '/tools/organize-pdf' },
                         { text: 'Add Attachments', link: '/tools/add-attachments' },
                         { text: 'Extract Attachments', link: '/tools/extract-attachments' },
@@ -164,9 +176,9 @@ export default defineConfig({
                     text: 'Secure PDF',
                     collapsed: true,
                     items: [
-                        { text: 'Encrypt PDF', link: '/tools/encrypt-pdf' },
+                        { text: 'Protect PDF', link: '/tools/protect-pdf' },
                         { text: 'Sanitize PDF', link: '/tools/sanitize-pdf' },
-                        { text: 'Decrypt PDF', link: '/tools/decrypt-pdf' },
+                        { text: 'Unlock PDF', link: '/tools/unlock-pdf' },
                         { text: 'Flatten PDF', link: '/tools/flatten-pdf' },
                         { text: 'Remove Metadata', link: '/tools/remove-metadata' },
                         { text: 'Change Permissions', link: '/tools/change-permissions' },

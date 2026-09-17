@@ -19,16 +19,12 @@ import type {
 import { exportComparePdf } from '../compare/reporting/export-compare-pdf.ts';
 import { LRUCache } from '../compare/lru-cache.ts';
 import { COMPARE_CACHE_MAX_SIZE } from '../compare/config.ts';
+import '../utils/setup-pdf-worker.js';
 import {
   getElement,
   computeComparisonForPair,
   getComparisonCacheKey,
 } from './compare-render.ts';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
 
 const pageState: CompareState = {
   pdfDoc1: null,
@@ -1183,11 +1179,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 pageState.viewMode === 'overlay'
                   ? Number.parseFloat(opacitySlider?.value || '0.5')
                   : undefined,
-              includeChange:
-                pageState.viewMode === 'overlay'
-                  ? (change) =>
-                      shouldIncludeChange(change, { includeSearch: false })
-                  : undefined,
+              includeChange: (change) =>
+                shouldIncludeChange(change, { includeSearch: false }),
             }
           );
         } catch (e) {

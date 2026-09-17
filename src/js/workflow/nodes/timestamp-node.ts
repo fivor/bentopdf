@@ -3,7 +3,11 @@ import { BaseWorkflowNode } from './base-node';
 import { pdfSocket } from '../sockets';
 import type { SocketData } from '../types';
 import { requirePdfInput, processBatch } from '../types';
-import { TIMESTAMP_TSA_PRESETS } from '../../config/timestamp-tsa.js';
+import { wfError } from '../errors';
+import {
+  TIMESTAMP_TSA_PRESETS,
+  isAllowedTsaUrl,
+} from '../../config/timestamp-tsa.js';
 import { timestampPdf } from '../../logic/digital-sign-pdf.js';
 import { loadPdfDocument } from '../../utils/load-pdf-document.js';
 
@@ -31,6 +35,14 @@ export class TimestampNode extends BaseWorkflowNode {
     return TIMESTAMP_TSA_PRESETS;
   }
 
+  sanitizeControlValue(key: string, value: unknown): unknown {
+    const sanitized = super.sanitizeControlValue(key, value);
+    if (key === 'tsaUrl' && !isAllowedTsaUrl(sanitized)) {
+      return TIMESTAMP_TSA_PRESETS[0].url;
+    }
+    return sanitized;
+  }
+
   async data(
     inputs: Record<string, SocketData[]>
   ): Promise<Record<string, SocketData>> {
@@ -47,8 +59,9 @@ export class TimestampNode extends BaseWorkflowNode {
         try {
           bytes = await timestampPdf(input.bytes, tsaUrl);
         } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
           throw new Error(
-            `Failed to timestamp using TSA ${tsaUrl}: ${err instanceof Error ? err.message : err}`,
+            wfError('timestampFailed', { tsa: tsaUrl, message }),
             { cause: err }
           );
         }
