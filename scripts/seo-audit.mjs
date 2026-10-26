@@ -13,6 +13,10 @@ const SITE_URL = (process.env.SITE_URL || 'https://www.bentopdf.com').replace(
 );
 const BASE_PATH = (process.env.BASE_URL || '/').replace(/\/$/, '');
 const HOST = new URL(SITE_URL).hostname;
+// Strict mode fails the build on findings. Deployments whose canonical host
+// intentionally differs from SITE_URL (e.g. a fork published under another
+// domain) can opt out with SEO_AUDIT_STRICT=false and still get the report.
+const STRICT = process.env.SEO_AUDIT_STRICT !== 'false';
 
 const NOINDEX_ALLOWLIST = new Set(['404.html', 'wasm-settings.html']);
 const SKIP_DIRS = new Set([
@@ -101,8 +105,14 @@ function auditHtml(file, knownSlugs) {
   if (!isLocalized) {
     const internal = findAll(html, /<a[^>]+href=["'](\/[^"'#?]*)["']/g);
     for (const href of internal) {
-      const clean = href.replace(/\/$/, '');
+      let clean = href.replace(/\/$/, '');
       if (clean === '') continue;
+      // Subpath deployments (e.g. /bentopdf/) prefix every internal link with
+      // the base path, so strip it before checking the target page exists.
+      if (BASE_PATH && clean.startsWith(BASE_PATH)) {
+        clean = clean.slice(BASE_PATH.length);
+        if (clean === '' || clean === '/') continue;
+      }
       const seg = clean.slice(1);
       if (seg.includes('/')) continue;
       if (LOCALE_DIRS.has(seg) || seg === 'blog' || seg === 'docs') continue;
@@ -380,7 +390,12 @@ function main() {
     if (failures.length > 100) {
       console.error(`  ... and ${failures.length - 100} more failures`);
     }
-    process.exit(1);
+    if (STRICT) {
+      process.exit(1);
+    }
+    console.warn(
+      '\nSEO audit: failures reported but not fatal (SEO_AUDIT_STRICT=false).'
+    );
   }
 }
 

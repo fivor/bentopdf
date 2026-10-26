@@ -12,6 +12,9 @@ const SITE_URL = (process.env.SITE_URL || 'https://www.bentopdf.com').replace(
   /\/+$/,
   ''
 );
+// Subpath deployments (e.g. a GitHub Pages project site) serve the app under
+// BASE_PATH, so every sitemap URL has to carry it.
+const BASE_PATH = (process.env.BASE_URL || '/').replace(/\/$/, '');
 const EXCLUDED_PAGES = new Set(['404', 'wasm-settings']);
 
 const languages = fs.readdirSync(LOCALES_DIR).filter((file) => {
@@ -58,10 +61,13 @@ function getPriority(pageName) {
 
 function buildUrl(lang, pageName) {
   const pagePath = pageName === 'index' ? '' : pageName;
+  const base = BASE_PATH;
   if (lang === 'en') {
-    return pagePath ? `${SITE_URL}/${pagePath}` : SITE_URL;
+    return pagePath ? `${SITE_URL}${base}/${pagePath}` : `${SITE_URL}${base}`;
   }
-  return pagePath ? `${SITE_URL}/${lang}/${pagePath}` : `${SITE_URL}/${lang}/`;
+  return pagePath
+    ? `${SITE_URL}${base}/${lang}/${pagePath}`
+    : `${SITE_URL}${base}/${lang}/`;
 }
 
 function generateSitemap() {
@@ -157,7 +163,9 @@ function generateSitemap() {
       .map((file) => file.replace('.html', ''));
     for (const name of blogFiles) {
       const url =
-        name === 'index' ? `${SITE_URL}/blog/` : `${SITE_URL}/blog/${name}`;
+        name === 'index'
+          ? `${SITE_URL}${BASE_PATH}/blog/`
+          : `${SITE_URL}${BASE_PATH}/blog/${name}`;
       const sourcePath = path.join(projectRoot, 'blog', `${name}.html`);
       let lastmod;
       try {
