@@ -3,7 +3,10 @@
 ARG BASE_URL=
 
 # Build stage
-FROM public.ecr.aws/docker/library/node:20-alpine AS builder
+# NODE_IMAGE is overridable (--build-arg NODE_IMAGE=...) so CI can pick a registry
+# that is not rate-limiting the runner. Default keeps the historical ECR mirror.
+ARG NODE_IMAGE=public.ecr.aws/docker/library/node:20-alpine
+FROM ${NODE_IMAGE} AS builder
 WORKDIR /app
 COPY package*.json ./
 COPY vendor ./vendor
